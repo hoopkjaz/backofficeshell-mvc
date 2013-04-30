@@ -39,39 +39,6 @@ namespace Backoffice.Services
         }
 
         /// <summary>
-        /// Signs the customer into the backoffice.
-        /// </summary>
-        /// <param name="customerID">The customer's ID.</param>
-        /// <param name="loginName">The customer's login name.</param>
-        /// <returns>Whether or not the customer was successfully signed in.</returns>
-        public bool SilentLogin(int customerID, string loginName)
-        {
-            var cust = (from c in ExigoApiContext.CreateODataContext().Customers
-                        where c.CustomerID == customerID
-                        where c.LoginName == loginName
-                        select new Backoffice.Exigo.OData.Customer { CustomerID = c.CustomerID }).FirstOrDefault();
-
-            if (cust != null) return CreateFormsAuthenticationTicket(cust.CustomerID);
-            else return false;
-        }
-
-        /// <summary>
-        /// Signs the customer into the backoffice.
-        /// </summary>
-        /// <param name="sessionID">A SessionID created by the Exigo web service's LoginCustomer method.</param>
-        /// <returns>Whether or not the customer was successfully signed in.</returns>
-        public bool SilentLogin(string sessionID)
-        {
-            var response = ExigoApiContext.CreateWebServiceContext().GetLoginSession(new GetLoginSessionRequest
-            {
-                SessionID = sessionID
-            });
-
-            if (response.Result.Status == ResultStatus.Success && response.CustomerID > 0) return CreateFormsAuthenticationTicket(response.CustomerID);
-            else return false;
-        }
-
-        /// <summary>
         /// Refreshes the current identity.
         /// </summary>
         /// <returns>Whether or not the customer was successfully refreshed.</returns>
@@ -123,27 +90,26 @@ namespace Backoffice.Services
         /// <returns>Whether or not the ticket was created successfully.</returns>
         public bool CreateFormsAuthenticationTicket(int customerID)
         {
-            var command = new SqlHelper();
-            var row = command.GetRow(@"
-                    SELECT 
-                        c.CustomerID,
-                        c.FirstName,
-                        c.LastName,
-                        c.Company,
-                        c.MainCountry,
-                        c.EnrollerID,
-                        c.SponsorID,
-                        c.LanguageID,
-                        c.CustomerTypeID,
-                        c.CustomerStatusID,
-                        c.DefaultWarehouseID,
-                        c.CurrencyCode,
-                        c.CreatedDate
-                    FROM 
-                        Customers c
-                    WHERE 
-                        c.CustomerID = {0}
-                ", customerID);
+            // Fetch this information with OData to ensure that the most up-to-date information is pulled.
+            var context = ExigoApiContext.CreateODataContext();
+            var customer = context.Customers
+                .Where(c => c.CustomerID == customerID)
+                .Select(c => new {
+                    c.CustomerID,
+                    c.FirstName,
+                    c.LastName,
+                    c.Company,
+                    c.MainCountry,
+                    EnrollerID = c.EnrollerID ?? 0,
+                    SponsorID = c.SponsorID ?? 0,
+                    c.LanguageID,
+                    c.CustomerTypeID,
+                    c.CustomerStatusID,
+                    c.DefaultWarehouseID,
+                    c.CurrencyCode,
+                    c.CreatedDate                    
+                })
+                .FirstOrDefault();
 
 
             FormsAuthenticationTicket ticket = new FormsAuthenticationTicket(1,
@@ -152,22 +118,20 @@ namespace Backoffice.Services
                 DateTime.Now.AddMinutes(GlobalSettings.Backoffice.SessionTimeoutInMinutes),
                 false,
                 string.Format("{0}|{1}|{2}|{3}|{4}|{5}|{6}|{7}|{8}|{9}|{10}|{11}|{12}|{13}",
-                    customerID,
-                    row["FirstName"].ToString(),
-                    row["LastName"].ToString(),
-                    row["Company"].ToString(),
-                    row["MainCountry"].ToString(),
-
-                    (!Convert.IsDBNull(row["EnrollerID"])) ? Convert.ToInt32(row["EnrollerID"]) : 0,
-                    (!Convert.IsDBNull(row["SponsorID"])) ? Convert.ToInt32(row["SponsorID"]) : 0,
-
-                    Convert.ToInt32(row["LanguageID"]),
-                    Convert.ToInt32(row["CustomerTypeID"]),
-                    Convert.ToInt32(row["CustomerStatusID"]),
-                    Convert.ToInt32(row["DefaultWarehouseID"]),
+                    customer.CustomerID,
+                    customer.FirstName,
+                    customer.LastName,
+                    customer.Company,
+                    customer.MainCountry,
+                    customer.EnrollerID,
+                    customer.SponsorID,
+                    customer.LanguageID,
+                    customer.CustomerTypeID,
+                    customer.CustomerStatusID,
+                    customer.DefaultWarehouseID,
                     "",
-                    row["CurrencyCode"].ToString(),
-                    Convert.ToDateTime(row["CreatedDate"]).ToShortDateString()));
+                    customer.CurrencyCode,
+                    customer.CreatedDate.ToShortDateString()));
 
             // encrypt the ticket
             string encTicket = FormsAuthentication.Encrypt(ticket);
