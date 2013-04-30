@@ -17,9 +17,9 @@ This backoffice shell is a great starting point for any Exigo Office client star
 <pre>
 public static class ExigoApiCredentials
 {
-    public static string LoginName   = "API_Username";
-    public static string Password    = "API_Password";
-    public static string CompanyKey  = "exigodemo";
+    public static string LoginName   = "";
+    public static string Password    = "";
+    public static string CompanyKey  = "";
 }
 </pre>
 
