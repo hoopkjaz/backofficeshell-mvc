@@ -22,7 +22,6 @@ namespace Backoffice
             routes.MapRouteLowerCase(
                 name:     "Default",
                 url:      "{controller}/{action}/{id}",
-                area:     "dashboard",
                 defaults: new { controller = "dashboard", action = "index", id = UrlParameter.Optional }
             );
         }
