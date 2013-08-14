@@ -19,8 +19,8 @@ namespace Backoffice
 
         public static class ExigoPaymentApiCredentials
         {
-            public static string LoginName                          = "";
-            public static string Password                           = "";
+            public static string LoginName                          = "exigodemo_w77ipWL41";
+            public static string Password                           = "594bIToTPmPe7W574IcoGzTg";
         }
 
         public static class ExigoApiSettings
@@ -154,24 +154,5 @@ namespace Backoffice
     {
         UnitedStates,
         Canada
-    }
-    public enum AddressType
-    {
-        Main    = 1,
-        Mailing = 2,
-        Other   = 3
-    }
-    public enum PaymentMethodType
-    {
-        PrimaryCreditCard   = 1,
-        SecondaryCreditCard = 2,
-        NewCreditCard       = 3
-    }
-    public enum DistributorSearchType
-    {
-        ID      = 1,
-        Name    = 2,
-        Company = 3,
-        Rank    = 4
     }
 }

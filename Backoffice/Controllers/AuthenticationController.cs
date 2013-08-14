@@ -55,10 +55,12 @@ namespace Backoffice.Controllers
         }
         #endregion
 
+        #region Signing out
         public ActionResult SignOut()
         {
             FormsAuthentication.SignOut();
             return RedirectToAction("Login");
         }
+        #endregion
     }
 }
